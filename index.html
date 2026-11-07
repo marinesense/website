@@ -1,0 +1,768 @@
+<title>MarineSense</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a ship's hull in section. Navy topsides for the hero and ShipSim bands, pale chart-paper between them, antifouling red as the single accent, mono for anything the plant measures. */
+:root {
+  --paper: #f3f6f8;
+  --panel: #ffffff;
+  --ink: #0c1d2b;
+  --muted: #4a5d6b;
+  --line: #d3dde4;
+  --hull: #0b2738;
+  --hull-2: #12354b;
+  --on-hull: #e8f0f5;
+  --on-hull-muted: #9fb6c6;
+  --hull-line: #24485f;
+  --red: #c23b2c;
+  --red-ink: #ffffff;
+  --sea: #1d6f93;
+  --good: #2c7a52;
+  --warn: #b8741a;
+  --wash: #e7eef2;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0a141b; --panel: #0f1d27; --ink: #e4ecf1; --muted: #93a8b6; --line: #1f3443;
+    --hull: #061019; --hull-2: #0b1c28; --on-hull: #e4ecf1; --on-hull-muted: #8fa7b8; --hull-line: #1c3445;
+    --red: #e5604f; --red-ink: #1b0705; --sea: #5bb4d8; --good: #69c08f; --warn: #e3a24a; --wash: #142531;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0a141b; --panel: #0f1d27; --ink: #e4ecf1; --muted: #93a8b6; --line: #1f3443;
+  --hull: #061019; --hull-2: #0b1c28; --on-hull: #e4ecf1; --on-hull-muted: #8fa7b8; --hull-line: #1c3445;
+  --red: #e5604f; --red-ink: #1b0705; --sea: #5bb4d8; --good: #69c08f; --warn: #e3a24a; --wash: #142531;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 18px; line-height: 1.6; }
+a { color: var(--sea); }
+:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+p { margin: 0; }
+h1, h2 { font-family: var(--display); font-stretch: 112%; font-weight: 750; letter-spacing: -0.015em; }
+h2 { font-size: clamp(2rem, 4.2vw, 3rem); line-height: 1.05; }
+h3 { font-size: 1.15rem; font-weight: 700; line-height: 1.3; }
+.eyebrow { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--red); }
+.lede { color: var(--muted); max-width: 60ch; font-size: 1.12rem; }
+.head { display: grid; gap: 14px; margin-bottom: 44px; max-width: 780px; }
+section { padding-block: clamp(64px, 9vw, 112px); }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+.btn { display: inline-flex; align-items: center; gap: 8px; font: 700 1rem/1 var(--body); padding: 14px 20px; border-radius: 999px; border: 1.5px solid transparent; text-decoration: none; cursor: pointer; }
+.btn-red { background: var(--red); color: var(--red-ink); }
+.btn-red:hover { filter: brightness(1.08); }
+.btn-line { border-color: currentColor; color: inherit; background: transparent; }
+.btn-line:hover { background: color-mix(in srgb, currentColor 10%, transparent); }
+
+/* Status strip */
+.strip { background: var(--red); color: var(--red-ink); font-size: 0.92rem; }
+.strip .wrap { display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: center; padding-block: 9px; text-align: center; }
+.strip b { font-family: var(--mono); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.78rem; }
+
+/* Header */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--hull); }
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--hull) 94%, transparent); backdrop-filter: blur(10px); color: var(--on-hull); border-bottom: 1px solid var(--hull-line); }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; font-family: var(--display); font-stretch: 112%; font-weight: 750; font-size: 1.3rem; }
+nav.links { display: flex; gap: 26px; font-size: 0.98rem; }
+nav.links a { color: var(--on-hull-muted); text-decoration: none; }
+nav.links a:hover { color: var(--on-hull); }
+.top .btn { padding: 10px 16px; font-size: 0.92rem; }
+@media (max-width: 880px) { nav.links { display: none; } }
+
+/* Hero */
+.hero { position: relative; overflow: hidden; background: var(--hull); color: var(--on-hull); padding-block: clamp(48px, 7vw, 96px) clamp(72px, 9vw, 120px); }
+.hero canvas { position: absolute; inset: auto 0 0 0; width: 100%; height: 46%; opacity: 0.55; pointer-events: none; }
+.hero .wrap { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: clamp(36px, 5vw, 72px); align-items: center; }
+@media (max-width: 980px) { .hero .wrap { grid-template-columns: minmax(0, 1fr); } }
+.hero-copy { display: grid; gap: 24px; min-width: 0; }
+.hero h1 { font-size: clamp(2.4rem, 4.9vw, 4.1rem); line-height: 1; }
+.hero h1 span { color: var(--red); }
+.hero .lede { color: var(--on-hull-muted); font-size: 1.2rem; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.hero .btn-line { color: var(--on-hull); }
+.ticks { display: flex; flex-wrap: wrap; gap: 8px 22px; list-style: none; margin: 0; padding: 0; font-family: var(--mono); font-size: 0.82rem; color: var(--on-hull-muted); }
+.ticks li::before { content: "✓ "; color: var(--good); }
+
+/* App window mock */
+.app { position: relative; min-width: 0; }
+.window { background: var(--panel); color: var(--ink); border-radius: 14px; overflow: hidden; box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--hull-line); }
+.win-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 16px; background: var(--wash); border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.04em; }
+.chips { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); font-family: var(--mono); font-size: 0.7rem; color: var(--muted); white-space: nowrap; background: var(--panel); }
+.chip.on::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--good); }
+.chip.ro { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, var(--line)); }
+.win-body { display: grid; gap: 16px; padding: 18px; }
+.ask { justify-self: end; max-width: 90%; background: var(--hull-2); color: var(--on-hull); padding: 10px 14px; border-radius: 14px 14px 4px 14px; font-size: 0.98rem; }
+.answer { display: grid; gap: 12px; font-size: 0.97rem; }
+.who { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sea); }
+.trend { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px 8px; display: grid; gap: 4px; }
+.trend-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; font-size: 0.82rem; color: var(--muted); }
+.trend-head strong { font-family: var(--mono); color: var(--red); font-weight: 500; font-size: 1rem; }
+.trend svg { width: 100%; height: auto; display: block; }
+.cites { display: flex; flex-wrap: wrap; gap: 6px; }
+.cites .chip { color: var(--sea); }
+.float { position: absolute; background: var(--panel); color: var(--ink); border-radius: 12px; padding: 10px 14px; box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.55); font-size: 0.85rem; display: grid; gap: 2px; }
+.float b { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--warn); font-weight: 500; }
+.float.f1 { left: -28px; bottom: 56px; }
+.float.f2 { right: -18px; top: -22px; }
+.float.f2 b { color: var(--good); }
+@media (max-width: 1240px) { .float.f1 { left: 12px; bottom: -26px; } .float.f2 { right: 12px; } }
+@media (max-width: 560px) { .float { display: none; } }
+.note { font-size: 0.8rem; color: var(--on-hull-muted); font-style: italic; margin-top: 14px; }
+
+/* Proof strip */
+.proof { padding-block: 0; background: var(--hull-2); color: var(--on-hull); border-top: 1px solid var(--hull-line); }
+.proof .wrap { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 860px) { .proof .wrap { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.stat { padding: 26px 20px 28px 0; display: grid; gap: 4px; min-width: 0; }
+.stat strong { font-family: var(--display); font-stretch: 112%; font-weight: 750; font-size: clamp(1.9rem, 3.4vw, 2.6rem); line-height: 1; }
+.stat span { color: var(--on-hull-muted); font-size: 0.94rem; }
+
+/* Problem */
+.problem .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 2px solid var(--ink); }
+@media (max-width: 860px) { .problem .grid { grid-template-columns: minmax(0, 1fr); } }
+.fact { padding: 26px 28px 8px 0; display: grid; gap: 10px; align-content: start; }
+.fact .big { font-family: var(--display); font-stretch: 112%; font-weight: 750; font-size: clamp(2.4rem, 4.4vw, 3.4rem); line-height: 1; color: var(--red); }
+.fact p { color: var(--muted); }
+.fact small { font-family: var(--mono); font-size: 0.74rem; color: var(--muted); letter-spacing: 0.02em; }
+
+/* Modules (tabs) */
+.modules { background: var(--wash); }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
+.tab { font: 600 0.98rem/1 var(--body); padding: 11px 16px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.panel { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(28px, 5vw, 64px); align-items: center; }
+@media (max-width: 900px) { .panel { grid-template-columns: minmax(0, 1fr); } }
+.panel-copy { display: grid; gap: 16px; min-width: 0; }
+.panel-copy h3 { font-family: var(--display); font-stretch: 112%; font-size: clamp(1.5rem, 2.6vw, 2rem); line-height: 1.1; font-weight: 750; }
+.panel-copy p { color: var(--muted); }
+.panel-copy ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.panel-copy li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; }
+.panel-copy li::before { content: ""; width: 10px; height: 10px; margin-top: 8px; border-radius: 2px; background: var(--red); }
+.panel .window { box-shadow: 0 30px 60px -36px rgba(12, 29, 43, 0.45), 0 0 0 1px var(--line); }
+.req { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
+.row-list { display: grid; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.row-list div { display: flex; justify-content: space-between; gap: 12px; padding: 9px 12px; border-bottom: 1px solid var(--line); font-size: 0.92rem; }
+.row-list div:last-child { border-bottom: 0; }
+.row-list .mono { font-size: 0.85rem; }
+.ok { color: var(--good); } .wn { color: var(--warn); } .bad { color: var(--red); }
+
+/* Audiences */
+.aud { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+@media (max-width: 860px) { .aud { grid-template-columns: minmax(0, 1fr); } }
+.aud article { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 30px 28px; display: grid; gap: 14px; align-content: start; }
+.aud .eyebrow { color: var(--sea); }
+.aud h3 { font-family: var(--display); font-stretch: 112%; font-size: 1.55rem; font-weight: 750; line-height: 1.12; }
+.aud dl { margin: 0; display: grid; gap: 12px; }
+.aud dt { font-weight: 700; }
+.aud dd { margin: 0; color: var(--muted); }
+
+/* Flow */
+.flow-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); }
+.flow-wrap svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.rules { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin-top: 40px; }
+@media (max-width: 800px) { .rules { grid-template-columns: minmax(0, 1fr); } }
+.rule { display: grid; gap: 6px; border-left: 3px solid var(--sea); padding-left: 16px; }
+.rule p { color: var(--muted); }
+
+/* ShipSim band */
+.dark { background: var(--hull); color: var(--on-hull); }
+.dark .lede { color: var(--on-hull-muted); }
+.sim { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 72px); align-items: start; }
+@media (max-width: 900px) { .sim { grid-template-columns: minmax(0, 1fr); } }
+.steps { list-style: none; margin: 0; padding: 0; counter-reset: s; display: grid; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; padding: 18px 0; border-top: 1px solid var(--hull-line); }
+.steps li::before { content: counter(s); font-family: var(--mono); color: var(--red); }
+.steps p { color: var(--on-hull-muted); font-size: 0.98rem; margin-top: 4px; }
+.grades { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.grades span { font-family: var(--mono); font-size: 0.72rem; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--hull-line); }
+.plant { background: var(--hull-2); border: 1px solid var(--hull-line); border-radius: 16px; overflow: hidden; }
+.plant-head { padding: 14px 18px; font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--on-hull-muted); border-bottom: 1px solid var(--hull-line); }
+.plant-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 13px 18px; border-bottom: 1px solid var(--hull-line); }
+.plant-row:last-child { border-bottom: 0; }
+.pill { font-family: var(--mono); font-size: 0.72rem; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.pill.run { background: color-mix(in srgb, var(--good) 22%, transparent); color: var(--on-hull); }
+.pill.next { background: var(--red); color: var(--red-ink); }
+.pill.plan { border: 1px solid var(--hull-line); color: var(--on-hull-muted); }
+
+/* Compare */
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); }
+table.compare { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 0.95rem; }
+.compare th, .compare td { padding: 13px 16px; border-bottom: 1px solid var(--line); text-align: left; }
+.compare thead th { font-size: 0.84rem; color: var(--muted); font-weight: 600; vertical-align: bottom; }
+.compare .us { background: color-mix(in srgb, var(--red) 7%, var(--panel)); font-weight: 700; color: var(--ink); }
+.compare tbody tr:last-child td { border-bottom: 0; }
+.y, .n, .s { font-family: var(--mono); font-size: 0.86rem; }
+.y { color: var(--good); } .n { color: var(--muted); } .s { color: var(--warn); }
+.fine { font-size: 0.85rem; color: var(--muted); margin-top: 12px; }
+
+/* Pricing */
+.price-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; }
+@media (max-width: 860px) { .price-grid { grid-template-columns: minmax(0, 1fr); } }
+.price-card { background: var(--hull); color: var(--on-hull); border-radius: 20px; padding: 34px 32px; display: grid; gap: 20px; align-content: start; }
+.price-card .eyebrow { color: var(--on-hull-muted); }
+.price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.price strong { font-family: var(--display); font-stretch: 112%; font-weight: 800; font-size: clamp(3rem, 6.5vw, 4.4rem); line-height: 0.95; }
+.price span { color: var(--on-hull-muted); }
+.included { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.included li::before { content: "✓  "; color: var(--good); font-weight: 700; }
+.side { display: grid; border-top: 2px solid var(--ink); }
+.side div { padding: 18px 0; border-bottom: 1px solid var(--line); display: grid; gap: 4px; }
+.side p { color: var(--muted); font-size: 0.98rem; }
+
+/* Team */
+.team { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+@media (max-width: 860px) { .team { grid-template-columns: minmax(0, 1fr); } }
+.disc { display: grid; gap: 12px; align-content: start; }
+.people { display: flex; flex-wrap: wrap; gap: 8px; }
+.person { display: flex; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 5px 14px 5px 5px; font-weight: 600; font-size: 0.95rem; }
+.person i { font-style: normal; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--hull); color: var(--on-hull); font-family: var(--mono); font-size: 0.72rem; }
+.disc p { color: var(--muted); font-size: 0.98rem; }
+
+/* FAQ */
+.faq { display: grid; border-top: 2px solid var(--ink); max-width: 880px; }
+.faq details { border-bottom: 1px solid var(--line); }
+.faq summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 16px; padding: 20px 0; font-weight: 700; font-size: 1.08rem; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font-family: var(--mono); color: var(--red); font-size: 1.3rem; line-height: 1; }
+.faq details[open] summary::after { content: "−"; }
+.faq details p { color: var(--muted); padding-bottom: 20px; max-width: 70ch; }
+
+/* Contact */
+.contact .wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 72px); align-items: start; }
+@media (max-width: 900px) { .contact .wrap { grid-template-columns: minmax(0, 1fr); } }
+.contact h2 { font-size: clamp(2.2rem, 5vw, 3.6rem); }
+.contact .agenda { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; color: var(--on-hull-muted); }
+.contact .agenda b { color: var(--on-hull); font-family: var(--mono); font-weight: 500; font-size: 0.85rem; margin-right: 10px; }
+form { background: var(--panel); color: var(--ink); border-radius: 20px; padding: 28px; display: grid; gap: 14px; }
+.field { display: grid; gap: 6px; }
+label { font-size: 0.88rem; font-weight: 700; }
+input, select, textarea { font: inherit; font-size: 1rem; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; width: 100%; }
+textarea { min-height: 96px; resize: vertical; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+@media (max-width: 520px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.form-note { font-size: 0.88rem; color: var(--muted); }
+.form-note[data-state="done"] { color: var(--good); }
+
+footer { background: var(--hull); color: var(--on-hull-muted); border-top: 1px solid var(--hull-line); font-size: 0.9rem; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding-block: 28px 40px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .trend .line { stroke-dasharray: 420; stroke-dashoffset: 420; animation: draw 1.6s 0.3s ease-out forwards; }
+  .trend .end { animation: pop 0.4s 1.8s both; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes pop { from { opacity: 0.2; } to { opacity: 1; } }
+  .panel { animation: fade 0.35s ease both; }
+  @keyframes fade { from { opacity: 0.5; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+</style>
+
+<div class="strip"><div class="wrap"><b>Pre-pilot</b><span>Testing on ShipSim now. First sea-trial installation planned for 2027.</span></div></div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="MarineSense home">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 17.5c3.3 0 3.3-3 6.6-3s3.3 3 6.6 3 3.3-3 6.6-3" fill="none" stroke="var(--red)" stroke-width="2.4" stroke-linecap="round"/></svg>
+      MarineSense
+    </a>
+    <nav class="links" aria-label="Sections">
+      <a href="#product">Product</a>
+      <a href="#how">How it works</a>
+      <a href="#shipsim">ShipSim</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a class="btn btn-red" href="#contact">Book a demo</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <canvas id="sea" aria-hidden="true"></canvas>
+    <div class="wrap">
+      <div class="hero-copy">
+        <span class="eyebrow">Offline AI for the engine room</span>
+        <h1>A second engineer who has read every manual. <span>Even with no link.</span></h1>
+        <p class="lede">MarineSense runs on a server in your control room. It reads machinery data through a one-way gateway and answers from the ship's own manuals, with the page cited. It never sends a command to any machinery.</p>
+        <div class="cta-row">
+          <a class="btn btn-red" href="#contact">Book a ShipSim demo</a>
+          <a class="btn btn-line" href="#product">See what it does</a>
+        </div>
+        <ul class="ticks">
+          <li>Runs with no internet</li>
+          <li>Read-only to OT</li>
+          <li>Every answer cites a page</li>
+        </ul>
+      </div>
+
+      <div class="app">
+        <div class="window" role="img" aria-label="Example MarineSense answer explaining a rising main engine exhaust temperature, with a 19-day trend chart and manual citation">
+          <div class="win-bar">
+            <span>MARINESENSE · ECR DESKTOP · 2/E</span>
+            <span class="chips"><span class="chip on">ONBOARD</span><span class="chip">LINK: NONE</span><span class="chip ro">READ-ONLY</span></span>
+          </div>
+          <div class="win-body">
+            <div class="ask">Why is ME unit 7 exhaust running hot?</div>
+            <div class="answer">
+              <span class="who">MarineSense · Machinery assurance</span>
+              <div class="trend">
+                <div class="trend-head"><span>Unit 7 exhaust vs cylinder mean · 19 days</span><strong>+38 °C</strong></div>
+                <svg viewBox="0 0 300 92" aria-hidden="true">
+                  <line x1="0" y1="80" x2="300" y2="80" stroke="var(--line)" stroke-width="1"/>
+                  <line x1="0" y1="32" x2="300" y2="32" stroke="var(--warn)" stroke-width="1" stroke-dasharray="4 4"/>
+                  <text x="0" y="27" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--warn)">Warning +30 °C</text>
+                  <path d="M0 70.4 L44 67.2 L88 60.8 L132 52.8 L176 43.2 L220 33.6 L250 25.6 L280 19.2 L280 80 L0 80 Z" fill="var(--red)" fill-opacity="0.1"/>
+                  <path class="line" d="M0 70.4 L44 67.2 L88 60.8 L132 52.8 L176 43.2 L220 33.6 L250 25.6 L280 19.2" fill="none" stroke="var(--red)" stroke-width="2.2" stroke-linejoin="round"/>
+                  <circle class="end" cx="280" cy="19.2" r="4" fill="var(--red)"/>
+                  <text x="0" y="91" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--muted)">Day 1</text>
+                  <text x="300" y="91" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--muted)" text-anchor="end">Today</text>
+                </svg>
+              </div>
+              <p>The rise is steady and the fuel index is normal, so a fuel pump fault is less likely. The manual's first check for this pattern is the exhaust valve. This advisory stays open until the Chief Engineer closes it.</p>
+              <div class="cites"><span class="chip">ME instruction manual · Rev 3 · p. 7-112</span><span class="chip">AMS trend · 1-min data</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="float f1" aria-hidden="true"><b>Advisory open · day 4</b>Carried over at crew change</div>
+        <div class="float f2" aria-hidden="true"><b>OWS window</b>Clear to discharge after 14:00</div>
+        <p class="note">Example screen. Readings and page numbers are illustrative.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="proof" aria-label="Where MarineSense stands today">
+    <div class="wrap">
+      <div class="stat"><strong>0</strong><span>OT writes allowed. Any attempt is a hard stop in testing.</span></div>
+      <div class="stat"><strong>4</strong><span>Plant systems running in ShipSim today</span></div>
+      <div class="stat"><strong>7</strong><span>Founders across marine, AI and ETO work</span></div>
+      <div class="stat"><strong>USD 1,000</strong><span>Per ship per month, every rank included</span></div>
+    </div>
+  </section>
+
+  <section class="problem">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">The problem</span>
+        <h2>Fewer engineers, more machinery, and the manual is in the other office</h2>
+        <p class="lede">Crews are smaller and change more often. The knowledge to fix a fault sits in thousands of manual pages and in the head of the engineer who just signed off.</p>
+      </div>
+      <div class="grid">
+        <div class="fact"><span class="big">39,100</span><p>Shortfall of certified officers worldwide.</p><small>BIMCO/ICS Seafarer Workforce Report, 2026</small></div>
+        <div class="fact"><span class="big">+50%</span><p>Rise in average machinery claim cost per vessel, from about USD 20,000 to 30,000.</p><small>Cefor Nordic hull statistics</small></div>
+        <div class="fact"><span class="big">USD 40m</span><p>Largest criminal penalty for illegal oily-waste discharge, paid by Princess Cruises.</p><small>US Department of Justice, 2016</small></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="product" class="modules">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">What engineers get</span>
+        <h2>One assistant for the whole plant</h2>
+        <p class="lede">Manuals, live data and environmental rules in one answer, instead of three separate systems.</p>
+      </div>
+      <div class="tabs" role="tablist" aria-label="MarineSense modules">
+        <button class="tab" role="tab" id="t-know" aria-controls="p-know" aria-selected="true">Vessel knowledge</button>
+        <button class="tab" role="tab" id="t-mach" aria-controls="p-mach" aria-selected="false" tabindex="-1">Machinery assurance</button>
+        <button class="tab" role="tab" id="t-env" aria-controls="p-env" aria-selected="false" tabindex="-1">Environmental</button>
+        <button class="tab" role="tab" id="t-cont" aria-controls="p-cont" aria-selected="false" tabindex="-1">Crew-change continuity</button>
+        <button class="tab" role="tab" id="t-job" aria-controls="p-job" aria-selected="false" tabindex="-1">Job preparation</button>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-know" aria-labelledby="t-know">
+        <div class="panel-copy">
+          <h3>Answers from your ship's own manuals</h3>
+          <p>OEM manuals stay in the vessel's library and are indexed in place. Every answer shows the document, revision and page. When it falls back on general knowledge, it says so.</p>
+          <ul><li>Typed questions in plain language</li><li>Conflicting sources are referred to the Chief Engineer</li><li>New manuals added only with CE approval</li></ul>
+        </div>
+        <div class="window"><div class="win-bar"><span>VESSEL KNOWLEDGE</span><span class="chip on">ONBOARD</span></div>
+          <div class="win-body"><div class="ask">Purifier bowl opening procedure?</div>
+            <div class="answer"><span class="who">From: Westfalia separator manual · Rev 2</span><p>Stop the feed, run the displacement water, then wait for the bowl to come to a complete stop before loosening the lock ring. The manual lists the special tools on the facing page.</p><div class="cites"><span class="chip">Separator manual · p. 5-14</span><span class="chip">Tools list · p. 5-15</span></div></div>
+          </div></div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-mach" aria-labelledby="t-mach" hidden>
+        <div class="panel-copy">
+          <h3>Deviations before they become damage</h3>
+          <p>Early trends, standby and redundancy checks, electrical reserve. A failing sensor is reported as a sensor fault, not a machinery fault, and missing data is never shown as healthy.</p>
+          <ul><li>Advisories survive a machinery stop</li><li>Operating profile decides which checks apply</li><li>Low disturbance: no alarms, no sounds</li></ul>
+        </div>
+        <div class="window"><div class="win-bar"><span>MACHINERY ASSURANCE · SEA PASSAGE</span><span class="chip ro">READ-ONLY</span></div>
+          <div class="win-body"><div class="ask">Is GE3 ready to take load?</div>
+            <div class="row-list">
+              <div><span>GE3 standby status</span><span class="mono ok">Ready</span></div>
+              <div><span>LO priming pressure</span><span class="mono ok">1.4 bar</span></div>
+              <div><span>Jacket water preheat</span><span class="mono ok">62 °C</span></div>
+              <div><span>GE1 power signal</span><span class="mono wn">Unreliable: reads −1 kW</span></div>
+              <div><span>Electrical reserve if GE2 trips</span><span class="mono ok">410 kW</span></div>
+            </div>
+          </div></div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-env" aria-labelledby="t-env" hidden>
+        <div class="panel-copy">
+          <h3>OWS planning you can defend</h3>
+          <p>Discharge windows from flowmeter, oil content meter, position and the bridge-confirmed route. Fuel mode and scrubber advice by location. Where a signal is not monitored, MarineSense says so.</p>
+          <ul><li>Live reassessment during discharge</li><li>MARPOL Annex I special areas on the route</li><li>Never answers "yes" on missing data</li></ul>
+        </div>
+        <div class="window"><div class="win-bar"><span>ENVIRONMENTAL ASSURANCE</span><span class="chip on">ONBOARD</span></div>
+          <div class="win-body"><div class="ask">Can I run the OWS this afternoon?</div>
+            <div class="answer"><span class="who">MarineSense · Environmental</span><p>Yes, after 14:00, once the ship is clear of the special area on the confirmed route. Last OCM reading was 4 ppm against the 15 ppm limit. Bilge holding tank is at 72%.</p><div class="cites"><span class="chip">MARPOL Annex I · Reg. 15</span><span class="chip">OWS manual · p. 4-08</span></div></div>
+          </div></div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-cont" aria-labelledby="t-cont" hidden>
+        <div class="panel-copy">
+          <h3>Knowledge that survives crew change</h3>
+          <p>Open issues, the evidence behind them and the reasons for each decision stay onboard after sign-off. Only the Chief Engineer closes an advisory, with a recorded explanation.</p>
+          <ul><li>History kept for the next crew</li><li>Chat cleared at sign-off, findings kept</li><li>PDF export for the handover file</li></ul>
+        </div>
+        <div class="window"><div class="win-bar"><span>OPEN ADVISORIES · HANDOVER</span><span class="chip">3 OPEN</span></div>
+          <div class="win-body"><div class="ask">What did the last 2/E leave open?</div>
+            <div class="row-list">
+              <div><span>ME unit 7 exhaust trend</span><span class="mono wn">Open · 4 days</span></div>
+              <div><span>Purifier 2 sludge interval</span><span class="mono wn">Open · 11 days</span></div>
+              <div><span>GE1 power transducer</span><span class="mono bad">Sensor fault</span></div>
+              <div><span>Aux boiler flame scanner</span><span class="mono ok">Closed by CE</span></div>
+            </div>
+          </div></div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-job" aria-labelledby="t-job" hidden>
+        <div class="panel-copy">
+          <h3>Jobs prepared in minutes</h3>
+          <p>OEM spares, tools and consumables for a task, with a storeroom checklist. Draft reports are reviewed without changing the original.</p>
+          <ul><li>Suggestions are labelled as suggestions</li><li>Checklist ready to print from the PDF</li><li>Part numbers taken from the ship's own manuals</li></ul>
+        </div>
+        <div class="window"><div class="win-bar"><span>TECHNICAL ASSURANCE</span><span class="chip on">ONBOARD</span></div>
+          <div class="win-body"><div class="ask">Spares for a fuel valve overhaul, unit 3</div>
+            <div class="row-list">
+              <div><span>Nozzle and spindle guide</span><span class="mono">1 set</span></div>
+              <div><span>O-ring kit, fuel valve</span><span class="mono">1 kit</span></div>
+              <div><span>Valve test pump</span><span class="mono">Tool</span></div>
+              <div><span>Torque wrench, 80–400 Nm</span><span class="mono">Tool</span></div>
+            </div>
+            <div class="cites"><span class="chip">ME manual · Fuel valve · p. 9-31</span></div>
+          </div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Who it is for</span>
+        <h2>Used in the engine room. Bought by the technical office.</h2>
+      </div>
+      <div class="aud">
+        <article>
+          <span class="eyebrow">On the vessel</span>
+          <h3>Less searching, more fixing</h3>
+          <dl>
+            <div><dt>Chief Engineer</dt><dd>Stays in charge. Approves manuals, closes advisories and sees system status.</dd></div>
+            <div><dt>2/E, 3/E, 4/E and ETO</dt><dd>Fast answers on watch, OWS planning and job preparation.</dd></div>
+            <div><dt>Master</dt><dd>A vessel overview and confirmation of discharge windows on the route.</dd></div>
+          </dl>
+        </article>
+        <article>
+          <span class="eyebrow">In the office</span>
+          <h3>Evidence you can audit</h3>
+          <dl>
+            <div><dt>Technical superintendents</dt><dd>Own the deviation criteria and review each vessel's configuration.</dd></div>
+            <div><dt>Technical directors</dt><dd>Lower crew workload and earlier warning, with records behind every advisory.</dd></div>
+            <div><dt>New-build owners</dt><dd>Delivered with MarineSense running, fitted during sea trials.</dd></div>
+          </dl>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" class="modules">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">How it works</span>
+        <h2>Data flows one way. Answers stay onboard.</h2>
+        <p class="lede">MarineSense sits beside your existing systems, including platforms such as SMARTShip or Vessel Insight. It reads, it never writes, and it keeps working when the satellite link drops.</p>
+      </div>
+      <div class="flow-wrap">
+        <svg viewBox="0 0 960 250" role="img" aria-label="Engine room OT feeds a one-way gateway, which feeds the MarineSense edge server, which serves the desktop on the ship's LAN. A shore server syncs only when the link allows.">
+          <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>
+          <g font-family="Source Sans 3, sans-serif">
+            <rect x="20" y="40" width="190" height="110" rx="12" fill="var(--paper)" stroke="var(--line)"/>
+            <text x="38" y="68" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">SHIP SYSTEMS</text>
+            <text x="38" y="94" font-size="17" font-weight="700" fill="var(--ink)">Engine room OT</text>
+            <text x="38" y="118" font-size="13" fill="var(--muted)">AMS, OWS and OCM,</text>
+            <text x="38" y="136" font-size="13" fill="var(--muted)">flowmeters, GPS</text>
+
+            <rect x="260" y="40" width="190" height="110" rx="12" fill="var(--paper)" stroke="var(--red)" stroke-width="1.5"/>
+            <text x="278" y="68" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--red)">SECURITY BOUNDARY</text>
+            <text x="278" y="94" font-size="17" font-weight="700" fill="var(--ink)">One-way gateway</text>
+            <text x="278" y="118" font-size="13" fill="var(--muted)">Writes are rejected</text>
+            <text x="278" y="136" font-size="13" fill="var(--muted)">and logged</text>
+
+            <rect x="500" y="40" width="200" height="110" rx="12" fill="var(--hull)" stroke="var(--hull)"/>
+            <text x="518" y="68" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--on-hull-muted)">ONBOARD SERVER</text>
+            <text x="518" y="94" font-size="17" font-weight="700" fill="var(--on-hull)">MarineSense edge</text>
+            <text x="518" y="118" font-size="13" fill="var(--on-hull-muted)">Local model, manual index,</text>
+            <text x="518" y="136" font-size="13" fill="var(--on-hull-muted)">rules, vessel history</text>
+
+            <rect x="750" y="40" width="190" height="110" rx="12" fill="var(--paper)" stroke="var(--line)"/>
+            <text x="768" y="68" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">SHIP'S LAN</text>
+            <text x="768" y="94" font-size="17" font-weight="700" fill="var(--ink)">ECR Desktop</text>
+            <text x="768" y="118" font-size="13" fill="var(--muted)">Rank profiles, CE</text>
+            <text x="768" y="136" font-size="13" fill="var(--muted)">to cadet</text>
+
+            <line x1="212" y1="95" x2="256" y2="95" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#arr)"/>
+            <line x1="452" y1="95" x2="496" y2="95" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#arr)"/>
+            <line x1="702" y1="95" x2="746" y2="95" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#arr)"/>
+
+            <line x1="600" y1="152" x2="600" y2="190" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>
+            <rect x="420" y="190" width="360" height="44" rx="10" fill="none" stroke="var(--line)" stroke-dasharray="5 4"/>
+            <text x="438" y="217" font-size="13.5" fill="var(--muted)"><tspan font-weight="700" fill="var(--ink)">Shore server, when the link allows:</tspan> sync and second opinion</text>
+          </g>
+        </svg>
+      </div>
+      <div class="rules">
+        <div class="rule"><h3>Offline first</h3><p>Core assistance needs no internet. Updates are small packages queued for port Wi-Fi or a good satellite window.</p></div>
+        <div class="rule"><h3>Read-only, always</h3><p>Any write or control path is a hard stop in testing. That keeps the cyber and class approval burden low.</p></div>
+        <div class="rule"><h3>Gaps shown as gaps</h3><p>Missing data is shown as missing. Values are never repeated or invented to fill a gap.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="shipsim" class="dark">
+    <div class="wrap sim">
+      <div>
+        <div class="head">
+          <span class="eyebrow">ShipSim</span>
+          <h2>Proven on a simulated plant before it goes aboard</h2>
+          <p class="lede">ShipSim is our own machinery simulator. An instructor injects hidden faults and you watch MarineSense find and explain them. Your vessel takes no risk.</p>
+        </div>
+        <ol class="steps">
+          <li><div><h3>The instructor injects a hidden fault</h3><p>Observers on the OT screens and on MarineSense never see the fault's label.</p></div></li>
+          <li><div><h3>The test runs to a fixed script</h3><p>Fixed start conditions, events and expected outcomes. Each run becomes a regression baseline.</p></div></li>
+          <li><div><h3>Seafarers grade the result</h3><p>Marine, IT and deployment reviewers grade every advisory.</p>
+            <div class="grades"><span>Pass</span><span>Needs improvement</span><span>Needs review</span><span>Hard stop</span></div></div></li>
+        </ol>
+      </div>
+      <div class="plant">
+        <div class="plant-head">ShipSim plant · November 2026</div>
+        <div class="plant-row"><span>Oily water separator, flowmeter, OCM, GPS</span><span class="pill run">Running</span></div>
+        <div class="plant-row"><span>Diesel generators and switchboard</span><span class="pill run">Running</span></div>
+        <div class="plant-row"><span>Fuel oil purifiers</span><span class="pill run">Running</span></div>
+        <div class="plant-row"><span>Incinerator</span><span class="pill run">Running</span></div>
+        <div class="plant-row"><span>Read-only HTTP and Modbus gateway</span><span class="pill run">Running</span></div>
+        <div class="plant-row"><span>Two-stroke main engine</span><span class="pill next">Next</span></div>
+        <div class="plant-row"><span>AC, refrigeration, LO, boiler, scrubber</span><span class="pill plan">Planned</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="compare">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Where it fits</span>
+        <h2>Keep your dashboards. Add the engineer's answer.</h2>
+        <p class="lede">Monitoring platforms show the data. Document assistants search the manuals. OWS recorders log the discharge. MarineSense reads all three and explains what they mean together.</p>
+      </div>
+      <div class="table-scroll">
+        <table class="compare">
+          <thead><tr><th scope="col">Capability</th><th scope="col" class="us">MarineSense</th><th scope="col">Document AI assistants</th><th scope="col">Performance monitoring</th><th scope="col">OEM remote monitoring</th><th scope="col">OWS recorders</th></tr></thead>
+          <tbody>
+            <tr><td>Answers with the manual page cited</td><td class="us"><span class="y">Yes</span></td><td><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
+            <tr><td>Works with no internet</td><td class="us"><span class="y">Yes</span></td><td><span class="s">Some</span></td><td><span class="s">Some</span></td><td><span class="n">No</span></td><td><span class="y">Yes</span></td></tr>
+            <tr><td>Reads live machinery data</td><td class="us"><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="y">Yes</span></td><td><span class="s">Own make</span></td><td><span class="s">OWS only</span></td></tr>
+            <tr><td>Explains a deviation in plain language</td><td class="us"><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="s">Limits only</span></td><td><span class="s">Via shore expert</span></td><td><span class="n">No</span></td></tr>
+            <tr><td>Plans OWS discharges</td><td class="us"><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="s">Zone alerts</span></td><td><span class="n">No</span></td><td><span class="s">Records only</span></td></tr>
+            <tr><td>Flags bad sensor data</td><td class="us"><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="s">Some</span></td><td><span class="s">Some</span></td><td><span class="n">No</span></td></tr>
+            <tr><td>Carries open issues across crew change</td><td class="us"><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="fine">Category comparison based on public product pages and onboard screens reviewed in November 2026. Individual products vary.</p>
+    </div>
+  </section>
+
+  <section id="pricing" class="modules">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Pricing</span>
+        <h2>One price per ship</h2>
+        <p class="lede">A monthly subscription for the software. The onboard hardware is bought outright. Terms for the first fleets are agreed with each customer.</p>
+      </div>
+      <div class="price-grid">
+        <div class="price-card">
+          <span class="eyebrow">MarineSense subscription</span>
+          <div class="price"><strong>USD 1,000</strong><span>per ship per month</span></div>
+          <ul class="included">
+            <li>All modules: knowledge, machinery, environmental, continuity, job preparation</li>
+            <li>Updates and model improvements, sized for satellite links</li>
+            <li>Shore sync and shore review when the link allows</li>
+            <li>Every rank on board, with no per-user fees</li>
+          </ul>
+          <a class="btn btn-red" href="#contact" style="justify-self:start">Talk to us about a pilot</a>
+        </div>
+        <div class="side">
+          <div><h3>Onboard hardware</h3><p>Edge server, one-way gateway and UPS, sold to the ship and installed by our deployment engineers.</p></div>
+          <div><h3>Pilot on sister ships</h3><p>Start with a few vessels of one class, with acceptance tests agreed before installation.</p></div>
+          <div><h3>New builds</h3><p>Fitted and commissioned during sea trials, so the ship is delivered with MarineSense running.</p></div>
+          <div><h3>ShipSim</h3><p>Licensed separately to yards, integrators and other test teams.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="team">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">The team</span>
+        <h2>Built by people who have stood the watch</h2>
+        <p class="lede">Seven founders from three disciplines. Every result passes marine, IT and deployment review before it reaches a vessel.</p>
+      </div>
+      <div class="team">
+        <div class="disc">
+          <span class="eyebrow">Marine engineering</span>
+          <div class="people"><span class="person"><i>AB</i>Athul Basil Antony</span><span class="person"><i>GM</i>Geo Mrithul Antony</span><span class="person"><i>NR</i>Nikhil Ramachandran</span></div>
+          <p>Requirements, fault scenarios and advisory review.</p>
+        </div>
+        <div class="disc">
+          <span class="eyebrow">AI and software</span>
+          <div class="people"><span class="person"><i>JJ</i>Jeeth Joseph</span><span class="person"><i>JA</i>Joji Alexander</span></div>
+          <p>Product, onboard AI, security and testing.</p>
+        </div>
+        <div class="disc">
+          <span class="eyebrow">ETO and deployment</span>
+          <div class="people"><span class="person"><i>AJ</i>Ashvin Joseph</span><span class="person"><i>RM</i>Rahul Madampillil</span></div>
+          <p>Data acquisition, interfaces and installation onboard.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" class="modules">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">FAQ</span>
+        <h2>Questions superintendents ask first</h2>
+      </div>
+      <div class="faq">
+        <details open><summary>Can MarineSense change anything on the ship?</summary><p>No. It reads through a one-way gateway, and any write or control path is treated as a hard stop in testing. It advises; the Chief Engineer decides.</p></details>
+        <details><summary>What happens when the satellite link is down?</summary><p>Nothing changes for the crew. The model, the manual index and the vessel's history all run on the onboard server. The shore server only syncs and gives a second opinion when the link allows.</p></details>
+        <details><summary>Do we need to replace our monitoring platform?</summary><p>No. MarineSense reads from the systems you already have, whether that is the alarm and monitoring system directly or a platform such as SMARTShip or Vessel Insight.</p></details>
+        <details><summary>Whose manuals does it use?</summary><p>The vessel's own. Manuals stay in the ship's library and are indexed in place, with Chief Engineer approval. They are not copied to other vessels.</p></details>
+        <details><summary>How do we know it works before it goes aboard?</summary><p>We run it on ShipSim first. An instructor injects hidden faults, and your engineers can watch MarineSense find and explain them before you approve any installation.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="contact dark">
+    <div class="wrap">
+      <div class="head" style="margin-bottom:0">
+        <span class="eyebrow">Book a demo</span>
+        <h2>Watch it find a fault on ShipSim</h2>
+        <p class="lede">A 45-minute online session with our marine engineers.</p>
+        <ul class="agenda">
+          <li><b>10 min</b>Your fleet, makers and pain points</li>
+          <li><b>25 min</b>Hidden faults injected live, explained by MarineSense</li>
+          <li><b>10 min</b>Pilot terms and installation steps</li>
+        </ul>
+      </div>
+      <form id="demo-form" novalidate>
+        <div class="two">
+          <div class="field"><label for="name">Name</label><input id="name" name="name" autocomplete="name" required></div>
+          <div class="field"><label for="company">Company</label><input id="company" name="company" autocomplete="organization" required></div>
+        </div>
+        <div class="two">
+          <div class="field"><label for="role">Role</label>
+            <select id="role" name="role"><option>Technical superintendent</option><option>Technical director</option><option>Chief Engineer</option><option>Shipyard or new-build team</option><option>Other</option></select>
+          </div>
+          <div class="field"><label for="fleet">Ships in fleet</label><input id="fleet" name="fleet" inputmode="numeric" placeholder="e.g. 24"></div>
+        </div>
+        <div class="field"><label for="email">Work email</label><input id="email" name="email" type="email" autocomplete="email" required></div>
+        <div class="field"><label for="notes">What would you like to see?</label><textarea id="notes" name="notes" placeholder="Ship types, machinery makers, OWS questions"></textarea></div>
+        <button class="btn btn-red" type="submit" style="justify-self:start">Request a demo</button>
+        <p class="form-note" id="form-note" aria-live="polite">This page is a preview. Requests are not sent yet.</p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>MarineSense · Offline AI for the engine room · Read-only by design</span>
+    <span>MarineSense advises. The Chief Engineer decides.</span>
+  </div>
+</footer>
+
+<script>
+  // Module tabs
+  const tabs = [...document.querySelectorAll('.tab')];
+  function select(tab) {
+    tabs.forEach(t => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', on);
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => select(t));
+    t.addEventListener('keydown', e => {
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!d) return;
+      const n = tabs[(i + d + tabs.length) % tabs.length];
+      select(n); n.focus();
+    });
+  });
+
+  // Demo form (preview only)
+  const form = document.getElementById('demo-form');
+  const note = document.getElementById('form-note');
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const missing = [...form.querySelectorAll('[required]')].filter(el => !el.value.trim());
+    if (missing.length) {
+      note.removeAttribute('data-state');
+      note.textContent = 'Add your ' + missing.map(el => form.querySelector(`label[for="${el.id}"]`).textContent.toLowerCase()).join(', ') + ' to continue.';
+      missing[0].focus();
+      return;
+    }
+    note.setAttribute('data-state', 'done');
+    note.textContent = 'Thanks. This preview does not send requests yet, so nothing was submitted.';
+  });
+
+  // Hero sea surface
+  const cv = document.getElementById('sea');
+  const ctx = cv.getContext('2d');
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function size() { const r = cv.getBoundingClientRect(); cv.width = r.width * devicePixelRatio; cv.height = r.height * devicePixelRatio; }
+  function draw(t) {
+    const w = cv.width, h = cv.height, color = getComputedStyle(document.documentElement).getPropertyValue('--on-hull-muted').trim();
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = color;
+    for (let k = 0; k < 9; k++) {
+      const y0 = h * (0.12 + k * 0.1), amp = (6 + k * 2.2) * devicePixelRatio, len = w / (2.2 + k * 0.35);
+      ctx.globalAlpha = 0.12 + k * 0.05;
+      ctx.lineWidth = devicePixelRatio;
+      ctx.beginPath();
+      for (let x = 0; x <= w; x += 6 * devicePixelRatio) {
+        const y = y0 + Math.sin(x / len * Math.PI * 2 + t / (2400 - k * 150) + k) * amp + Math.sin(x / (len * 0.37) + t / 1700 + k * 2) * amp * 0.3;
+        x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      }
+      ctx.stroke();
+    }
+    if (!still) requestAnimationFrame(draw);
+  }
+  size(); addEventListener('resize', size); requestAnimationFrame(draw);
+</script>
