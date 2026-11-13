@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MarineSense — Manuals library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<script>try { document.documentElement.dataset.theme = localStorage.getItem('ms-theme') || 'light'; } catch (e) {}</script>
+<style>
+.cols { display: flex; gap: 12px; align-items: center; }
+.cols > :nth-child(1) { flex: 3 1 0; min-width: 0; }
+.cols > :nth-child(2), .cols > :nth-child(3) { flex: 1 1 0; text-align: right; }
+.cols > :nth-child(4) { flex: 2 1 0; }
+.head { padding: 0 14px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); }
+.manual { min-height: 56px; padding: 6px 14px; border-radius: 10px; }
+.learn { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.learn div { padding: 10px 12px; border-radius: 10px; background: var(--bg); }
+.learn b { display: block; font: 500 20px 'JetBrains Mono', monospace; }
+.tree div { display: flex; align-items: center; gap: 8px; }
+.tree div::before { content: ""; width: 10px; height: 1px; background: var(--wire); }
+.facts li { display: flex; gap: 10px; line-height: 1.5; }
+.facts li::before { content: ""; flex: none; width: 6px; height: 6px; margin-top: 8px; border-radius: 50%; background: var(--accent); }
+</style>
+</head>
+<body data-page="manuals">
+<header id="menu"></header>
+
+<main class="wrap">
+  <div>
+    <h1 class="h1" style="font-size:20px">Manuals library</h1>
+    <div class="mute">Give me the maker's manual for any equipment. I read it, link it to the ship's signals, and use it in every answer.</div>
+  </div>
+
+  <section class="row">
+    <button type="button" class="drop">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="c-accent" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 16v4h16v-4"/></svg>
+      <span><b class="display" style="display:block;font-size:20px;font-weight:600">Drop a manual here</b><span class="mute">PDF or scanned pages. Any maker, any language. I will ask you if a page is unclear.</span></span>
+    </button>
+    <div class="row" style="flex:2 1 480px;gap:12px">
+      <div class="card" style="flex:1 1 130px;gap:0"><b class="mono" style="font-size:28px;font-weight:500">14</b><span class="mute" style="font-size:13px">manuals on board</span></div>
+      <div class="card" style="flex:1 1 130px;gap:0"><b class="mono" style="font-size:28px;font-weight:500">9,860</b><span class="mute" style="font-size:13px">pages read</span></div>
+      <div class="card" style="flex:1 1 130px;gap:0"><b class="mono" style="font-size:28px;font-weight:500">1,240</b><span class="mute" style="font-size:13px">parts placed in the twin</span></div>
+      <div class="card" style="flex:1 1 130px;gap:0"><b class="mono" style="font-size:28px;font-weight:500">312</b><span class="mute" style="font-size:13px">alarms I can explain</span></div>
+    </div>
+  </section>
+
+  <section class="row top">
+    <div class="card" style="flex:1.6 1 520px;gap:8px">
+      <div class="title"><h2>What I have read</h2></div>
+      <div class="scroll-x"><div class="col" style="min-width:560px;gap:6px">
+        <div class="cols head"><span>Equipment and manual</span><span>Pages</span><span>Signals</span><span>Status</span></div>
+        <div class="col" style="gap:6px" id="rows"></div>
+      </div></div>
+    </div>
+    <aside class="card hl" style="flex:1 1 340px;gap:14px" id="detail"></aside>
+  </section>
+</main>
+
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  const { $ } = MS;
+  const DOCS = [
+    { eq: 'Main engine', doc: 'Operation and maintenance manual, Vol 1 to 3', pages: '2,140', sigs: 486, s: 0, c: [96, 142, 318, 486],
+      tree: ['Main engine', 'Cylinder unit (6)', 'Exhaust valve', 'Spindle, seat, hydraulic actuator'],
+      facts: ['One cylinder more than 50 °C above the average means a fault inside that cylinder.', 'Exhaust valves are overhauled every 8,000 running hours.', 'Reduced load is allowed with a leaking exhaust valve below the alarm line.'] },
+    { eq: 'Generator sets 1 to 3', doc: 'Instruction manual', pages: '1,320', sigs: 354, s: 0, c: [58, 87, 204, 354],
+      tree: ['Generator set', 'Diesel engine', 'Lube oil system', 'Oil pump, filter, cooler'],
+      facts: ['Oil pressure below 3.5 bar at running speed needs a filter check.', 'Standby set must start within 30 seconds of a blackout signal.'] },
+    { eq: 'Fuel oil purifiers', doc: 'Operating manual', pages: '410', sigs: 62, s: 0, c: [24, 31, 76, 62],
+      tree: ['Purifier', 'Bowl assembly', 'Disc stack', 'Seal rings'],
+      facts: ['Vibration rising over several days points to uneven sludge in the bowl.', 'Bowl is cleaned every 1,500 running hours or when vibration passes the watch line.'] },
+    { eq: 'Boiler', doc: 'Operation manual', pages: '380', sigs: 48, s: 0, c: [19, 22, 54, 48],
+      tree: ['Boiler', 'Burner unit', 'Flame scanner', 'Ignition electrodes'],
+      facts: ['Low water level trips the burner and must be reset by hand.', 'Safety valves are tested at every port state inspection.'] },
+    { eq: 'Oil mist detector', doc: 'User manual', pages: '96', sigs: 14, s: 0, c: [11, 6, 18, 14],
+      tree: ['Detector', 'Sampling pipes', 'Measuring head'],
+      facts: ['Alarm may be reset only after the reading is back under the alarm line.', 'Crankcase doors stay closed during an alarm.'] },
+    { eq: 'Steering gear', doc: 'Instruction book', pages: '260', sigs: 37, s: 0, c: [14, 18, 42, 37],
+      tree: ['Steering gear', 'Hydraulic power unit', 'Pump 1 and 2', 'Relief valves'],
+      facts: ['Both pumps are tested before every departure.', 'Oil pressure swing above 15 bar means air in the system.'] },
+    { eq: 'Ballast pumps', doc: 'Pump manual', pages: '148', sigs: 22, s: 1, c: [0, 0, 0, 22],
+      tree: ['Ballast pump', 'Reading in progress'], facts: ['I am still reading this manual. I will list what I learn here.'] },
+    { eq: 'Fresh water generator', doc: 'Scanned handbook', pages: '72', sigs: 9, s: 2, c: [5, 4, 12, 9],
+      tree: ['Fresh water generator', 'Evaporator', 'Ejector pump'],
+      facts: ['Pages 31 to 34 are too faint to read. Please scan them again or confirm the values with me.'] },
+  ];
+  const LABELS = ['alarms understood', 'service intervals', 'parts mapped', 'signals linked'];
+  let sel = 0, pct = 64;
+
+  function status(d) {
+    if (d.s === 1 && pct < 100) return '<span class="c-accent" style="font-weight:600"><span class="dot"></span> Reading… ' + pct + ' %</span><span class="bar" style="display:block;height:4px;margin-top:5px"><i style="width:' + pct + '%"></i></span>';
+    if (d.s === 2) return '<span class="c-warn" style="font-weight:600"><span class="dot sq"></span> Needs your eye</span>';
+    return '<span class="c-ok" style="font-weight:600"><span class="dot"></span> Read and linked</span>';
+  }
+  function rows() {
+    $('#rows').innerHTML = DOCS.map((d, i) => '<button type="button" class="pick manual cols' + (i === sel ? ' on' : '') + '" data-i="' + i + '" aria-pressed="' + (i === sel) + '">'
+      + '<span><b style="display:block">' + d.eq + '</b><span class="small mute">' + d.doc + '</span></span><span class="mono">' + d.pages + '</span><span class="mono">' + d.sigs + '</span><span>' + status(d) + '</span></button>').join('');
+  }
+  function detail() {
+    const d = DOCS[sel];
+    $('#detail').innerHTML = '<div><div class="eyebrow">What I learned from</div><h2 class="display" style="font-size:20px;margin-top:2px">' + d.eq + '</h2></div>'
+      + '<div class="learn">' + d.c.map((n, i) => '<div><b>' + n + '</b><span class="small mute">' + LABELS[i] + '</span></div>').join('') + '</div>'
+      + '<div><h3 style="font-size:13px;color:var(--text2);margin-bottom:8px">Parts tree I built for the digital twin</h3><div class="col tree" style="gap:4px">'
+      + d.tree.map((n, i) => '<div style="padding-left:' + i * 18 + 'px"' + (i === d.tree.length - 1 ? ' class="c-accent"' : '') + '>' + n + '</div>').join('') + '</div></div>'
+      + '<div><h3 style="font-size:13px;color:var(--text2);margin-bottom:8px">Rules I now watch for</h3><ul class="col facts" style="gap:8px">' + d.facts.map((f) => '<li>' + f + '</li>').join('') + '</ul></div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:10px"><a class="btn primary" href="twin.html">See it in the twin</a><button type="button" class="btn" data-open-chat>Ask about this manual</button></div>';
+  }
+  $('#rows').addEventListener('click', (e) => { const b = e.target.closest('[data-i]'); if (b) { sel = Number(b.dataset.i); rows(); detail(); } });
+  rows(); detail();
+  const reading = setInterval(() => { pct++; rows(); if (pct >= 100) clearInterval(reading); }, 1000);
+})();
+</script>
+</body>
+</html>

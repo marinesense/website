@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MarineSense — Digital twin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<script>try { document.documentElement.dataset.theme = localStorage.getItem('ms-theme') || 'light'; } catch (e) {}</script>
+<style>
+.crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.crumbs button { min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--wire); background: transparent; font-weight: 600; }
+.crumbs button.on { background: var(--accent); border-color: var(--accent); color: var(--ink); }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; padding: 12px 18px; border-top: 1px solid var(--line); }
+.controls label { flex: 1 1 220px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text2); }
+.controls input { flex: 1; min-width: 120px; height: 44px; accent-color: var(--accent-text); }
+.key { display: flex; gap: 14px; font-size: 12px; color: var(--text2); }
+</style>
+</head>
+<body data-page="twin">
+<header id="menu"></header>
+
+<main class="wrap">
+  <div>
+    <h1 class="h1" style="font-size:20px">Digital twin · MV Northern Aurora</h1>
+    <div class="mute">Tap any part to see its signals. Zoom in until you reach the part the manual describes.</div>
+  </div>
+
+  <div class="crumbs" id="crumbs"></div>
+
+  <div class="row">
+    <section class="card flush" style="flex:2.4 1 560px">
+      <div id="view" class="gridbg"></div>
+      <div class="controls">
+        <button type="button" class="btn" id="up">← Zoom out</button>
+        <label>Turn the view <input type="range" id="yaw" min="-157" max="157" value="-50"></label>
+        <button type="button" class="btn" id="auto" aria-pressed="true">Pause slow turn</button>
+        <div class="key"><span class="c-crit"><span class="dot sq"></span> Act now</span><span class="c-warn"><span class="dot"></span> Watch</span><span class="c-ok"><span class="dot"></span> Normal</span></div>
+      </div>
+    </section>
+
+    <aside class="col" style="flex:1 1 320px">
+      <div class="card" id="detail"></div>
+      <div class="card" style="gap:6px"><h2 class="display" style="font-size:15px;margin-bottom:4px" id="listTitle"></h2><div class="col" style="gap:6px" id="list"></div></div>
+    </aside>
+  </div>
+</main>
+
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  const { $, ST } = MS;
+  let sec = 0;
+  const value = (s, i) => (s[1] + s[2] * Math.sin(sec * 0.9 + i * 2)).toLocaleString('en-US', { minimumFractionDigits: s[4], maximumFractionDigits: s[4] });
+
+  function render(sc) {
+    const lvl = sc.level, p = sc.part, st = ST[p.st];
+    const chain = [];
+    for (let k = sc.lv; k; k = MS.levels[k].parent) chain.unshift(k);
+    $('#crumbs').innerHTML = chain.map((k, i) => '<button type="button" data-lv="' + k + '"' + (k === sc.lv ? ' class="on"' : '') + '>Level ' + (i + 1) + ' · ' + MS.levels[k].name + '</button><span class="mute" aria-hidden="true">›</span>').join('')
+      + '<span class="mute" style="font-size:13px">' + (chain.length < 4 ? 'Level ' + chain.length + ' of 4. Keep zooming to reach the single part.' : 'Level 4 of 4. This is the deepest level the manual describes.') + '</span>';
+    $('#up').hidden = !lvl.parent;
+
+    $('#detail').style.borderColor = p.st === 2 ? 'var(--crit)' : '';
+    $('#detail').innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px"><h2 class="display" style="flex:1;font-size:22px">' + (p.full || p.n) + '</h2><span class="tag c-' + st.k + '">' + st.t + '</span></div>'
+      + '<div style="display:flex;gap:12px"><span class="orb sm" aria-hidden="true"></span><p style="font-size:15px;line-height:1.55">' + p.say + '</p></div>'
+      + '<div>' + p.sig.map((s, i) => '<div class="kv"><span>' + s[0] + '<span class="small mute" style="display:block">' + s[5] + '</span></span><b><span data-sig="' + i + '">' + value(s, i) + '</span> <span class="small mute">' + s[3] + '</span></b></div>').join('') + '</div>'
+      + (p.ref ? '<a class="btn" style="border-style:dashed;justify-content:flex-start;font-weight:500;font-size:13px" href="manuals.html">' + p.ref + '</a>' : '')
+      + (p.to ? '<button type="button" class="btn primary big" id="dive">Zoom into ' + (p.full || p.n) + ' →</button>' : '')
+      + (p.st === 2 && !p.to ? '<a class="btn primary big" href="advisory.html">Start guided response</a>' : '');
+
+    $('#listTitle').textContent = 'Everything inside ' + lvl.label;
+    $('#list').innerHTML = lvl.parts.map((q) => {
+      const s = ST[q.st];
+      return '<button type="button" class="pick' + (q.id === p.id ? ' on' : '') + '" data-id="' + q.id + '"><span class="dot c-' + s.k + (q.st === 2 ? ' sq' : '') + '"></span><span>' + (q.full || q.n) + '</span><span class="small c-' + s.k + '">' + s.t + '</span></button>';
+    }).join('');
+  }
+
+  const sc = new MS.Scene($('#view'), { onChange: render });
+
+  document.addEventListener('click', (e) => {
+    const lv = e.target.closest('[data-lv]'), id = e.target.closest('[data-id]');
+    if (lv) sc.setLevel(lv.dataset.lv);
+    else if (id) sc.pick(id.dataset.id);
+    else if (e.target.closest('#dive')) sc.setLevel(sc.part.to);
+  });
+  $('#up').addEventListener('click', () => sc.setLevel(sc.level.parent));
+  $('#yaw').addEventListener('input', (e) => { sc.yaw = e.target.value / 100; setAuto(false); });
+  function setAuto(on) {
+    sc.auto = on;
+    $('#auto').textContent = on ? 'Pause slow turn' : 'Resume slow turn';
+    $('#auto').setAttribute('aria-pressed', String(on));
+  }
+  $('#auto').addEventListener('click', () => setAuto(!sc.auto));
+
+  // Live signal values tick every second without rebuilding the panel.
+  setInterval(() => {
+    sec++;
+    document.querySelectorAll('[data-sig]').forEach((n) => { const i = Number(n.dataset.sig); n.textContent = value(sc.part.sig[i], i); });
+  }, 1000);
+})();
+</script>
+</body>
+</html>

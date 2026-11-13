@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MarineSense — Ship setup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<script>try { document.documentElement.dataset.theme = localStorage.getItem('ms-theme') || 'light'; } catch (e) {}</script>
+<style>
+.stepper { flex: 1 1 220px; max-width: 340px; display: flex; flex-direction: column; gap: 6px; }
+.stepper .pick { min-height: 56px; padding: 6px 14px; border-radius: 10px; gap: 12px; }
+.src { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--line); }
+.map { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 4px 14px; border-radius: 10px; border: 1px solid var(--line); }
+.map > :nth-child(1) { flex: 1.2 1 0; } .map > :nth-child(2) { flex: 2 1 0; min-width: 0; } .map > :nth-child(3) { flex: 1 1 0; } .map > :nth-child(4) { flex: 1.2 1 0; text-align: right; }
+.map.head { min-height: 0; border: none; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); }
+.form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.ticks li { display: flex; gap: 12px; font-size: 16px; }
+.ticks li::before { content: "✓"; color: var(--ok); font-weight: 700; }
+@media (max-width: 720px) { .form { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body data-page="setup">
+<header id="menu"></header>
+
+<main class="wrap">
+  <div class="row mid">
+    <div style="flex:1">
+      <h1 class="h1" style="font-size:20px">Ship setup</h1>
+      <div class="mute">Six steps from a new ship to a living digital twin. I do the heavy work. You confirm.</div>
+    </div>
+    <div class="mono c-accent" id="stepNo"></div>
+  </div>
+
+  <div class="row top">
+    <ol class="stepper" aria-label="Setup steps" id="stepper"></ol>
+
+    <section class="col" style="flex:3 1 520px">
+      <div class="card hl" style="flex-direction:row;gap:16px">
+        <span class="orb" aria-hidden="true"></span>
+        <div><h2 class="display" style="font-size:22px" id="title"></h2><p style="margin-top:6px;font-size:16px;line-height:1.55" id="say"></p></div>
+      </div>
+      <div class="card" style="gap:14px;min-height:420px">
+        <div class="col" style="gap:14px" id="body"></div>
+        <div style="flex:1"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;padding-top:14px;border-top:1px solid var(--soft)">
+          <button type="button" class="btn big" id="back">← Back</button>
+          <button type="button" class="btn primary big" id="next"></button>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  const { $ } = MS;
+  const META = [
+    ['Vessel profile', 'Tell me which ship I am on.', 'Check these details. I filled in what I could read from the ship\'s systems.'],
+    ['Connect ship systems', 'Let me listen to the ship.', 'I found four systems on the ship network. Three are connected. Connect tank gauging and I will have the full picture.'],
+    ['Map the signals', 'I matched the signals to the ship.', 'I matched 2,301 of 2,418 signals on my own. For the rest I am not sure enough, so I am asking you. Answer the ones below and I will learn from them.'],
+    ['Add the manuals', 'Give me the makers\' manuals.', 'I have read 12 of 14 manuals. Three machines have signals but no manual yet.'],
+    ['Build the digital twin', 'I am building your ship.', 'I am placing every machine and part where it belongs, from the whole vessel down to single parts described in the manuals.'],
+    ['Go live', 'Ready for the first watch.', 'Everything is in place. From now on I watch every signal, every second, and I speak up when something needs you.'],
+  ];
+  const FORM = [['Ship name', 'MV Northern Aurora'], ['IMO number', '[IMO NUMBER]'], ['Ship type', 'Bulk carrier'], ['Main engine', '2-stroke, 6 cylinders'], ['Generators', '3 diesel generator sets'], ['Class society', '[CLASS SOCIETY]']];
+  const MAPS = [
+    ['AMS.TE4104', 'Cylinder 4 exhaust temp', 'Main engine › Cylinder unit 4', 98],
+    ['AMS.PT2201', 'Generator 1 lube oil pressure', 'Generator 1 › Lube oil system', 96],
+    ['PMS.AI_117', 'Ballast pump 1 bearing temp', 'Ballast pumps › Pump 1', 71],
+    ['AMS.VT0932', 'Fuel purifier 2 vibration', 'Fuel purifiers › Purifier 2', 64],
+    ['TGS.LVL_FP', 'Forepeak tank level', 'Ballast and forepeak › Forepeak tank', 58],
+  ];
+  const BUILD = [['Vessel', '1 ship', 'Hull and layout from the vessel profile'], ['Zones', '5 zones', 'Engine room, steering gear, cargo holds, bridge, ballast and forepeak'], ['Machines', '48 machines', 'Placed from the ship systems and the equipment list'], ['Parts', '1,240 parts', 'Taken from the parts trees in the manuals']];
+  let step = 2, tank = 0, timer;
+  const confirmed = new Set();
+  const tile = (n, label, cls) => '<div class="tile"><b' + (cls ? ' class="c-' + cls + '"' : '') + '>' + n + '</b><span class="mute" style="font-size:13px">' + label + '</span></div>';
+
+  const BODY = [
+    () => '<div class="form">' + FORM.map((f, i) => '<label class="field">' + f[0] + '<input type="text" value="' + f[1] + '" data-form="' + i + '"></label>').join('') + '</div>'
+      + '<div class="mute" style="font-size:13px">I use these to pick the right ship model and the equipment list I expect to find.</div>',
+    () => [['Alarm and monitoring system', 'Modbus TCP', 'Connected · 1,640 signals', 2], ['Engine control system', 'OPC UA', 'Connected · 512 signals', 2], ['Power management system', 'Modbus TCP', 'Connected · 266 signals', 2],
+      ['Tank gauging system', 'NMEA 0183', ['Not connected', 'Connecting…', 'Connected · 84 signals'][tank], tank]].map((o) => {
+      const cls = ['warn', 'accent', 'ok'][o[3]];
+      return '<div class="src"><span class="dot c-' + cls + '"></span><span style="flex:1 1 220px"><b style="display:block;font-size:16px">' + o[0] + '</b><span class="mono small mute">' + o[1] + '</span></span><span class="c-' + cls + '">' + o[2] + '</span>'
+        + (o[3] === 0 ? '<button type="button" class="btn primary" id="connect">Connect</button>' : '') + '</div>';
+    }).join('') + '<div class="note" style="font-size:14px">Read-only. I listen to the ship\'s systems. I never send a command to any control system. People act; I advise.</div>',
+    () => {
+      const open = MAPS.filter((m, i) => m[3] < 90 && !confirmed.has(i)).length;
+      return '<div class="row" style="gap:12px">' + tile('2,418', 'signals found') + tile('2,301', 'matched by me', 'ok') + tile(112 + open, 'need your eye', 'warn') + '</div>'
+        + '<div class="scroll-x"><div class="col" style="min-width:600px;gap:6px"><div class="map head"><span>Tag from the ship</span><span>What I think it is</span><span>How sure</span><span></span></div>'
+        + MAPS.map((m, i) => {
+          const sure = m[3] >= 90, yes = confirmed.has(i);
+          return '<div class="map"><span class="mono" style="font-size:13px">' + m[0] + '</span><span><b style="display:block">' + m[1] + '</b><span class="small mute">' + m[2] + '</span></span><span class="mono c-' + (sure ? 'ok' : 'warn') + '">' + m[3] + ' %</span><span>'
+            + (sure || yes ? '<span class="c-ok" style="font-weight:600">✓ ' + (yes ? 'Confirmed by you' : 'Matched') + '</span>' : '<button type="button" class="btn primary" data-confirm="' + i + '">Yes, correct</button>') + '</span></div>';
+        }).join('') + '</div></div><div class="mute" style="font-size:13px">I matched tags by name, unit, range and how each signal behaves. Showing 5 of the ones worth a look.</div>';
+    },
+    () => '<div class="row" style="gap:12px">' + tile('14', 'manuals given to me') + tile('12', 'read and linked', 'ok') + tile('3', 'machines with no manual yet', 'warn') + '</div>'
+      + '<p style="font-size:15px;line-height:1.55">I found signals for the air compressors, the sewage plant and the incinerator, but I have no manual for them. I can still watch them, but I cannot explain their alarms until you add the manuals.</p>'
+      + '<a class="btn primary big" style="align-self:flex-start" href="manuals.html">Open the manuals library</a>',
+    () => BUILD.map((b, i) => '<div class="col" style="gap:6px;padding-left:' + i * 20 + 'px"><div style="display:flex;align-items:baseline;gap:10px"><span class="eyebrow">Level ' + (i + 1) + '</span><b style="flex:1;font-size:16px">' + b[0] + '</b><span class="mono">' + b[1] + '</span></div>'
+      + '<div class="bar"><i data-build="' + i + '" style="width:0"></i></div><div class="mute" style="font-size:13px">' + b[2] + '</div></div>').join('')
+      + '<a class="btn big" style="align-self:flex-start" href="twin.html">Preview the twin</a>',
+    () => '<ul class="col ticks" style="gap:10px"><li>Vessel profile confirmed</li><li>Ship systems connected, read-only</li><li>2,418 signals mapped to parts of the ship</li><li>14 manuals read</li><li>Digital twin built, four levels deep</li></ul>'
+      + '<p style="font-size:15px;line-height:1.55;color:var(--text2)">For the first 7 days I learn what normal looks like on this ship. I will still warn you about anything outside the makers\' limits from the first minute.</p>'
+      + '<a class="btn primary big" style="align-self:flex-start" href="index.html">Start the first watch</a>',
+  ];
+
+  function render() {
+    clearInterval(timer);
+    $('#stepNo').textContent = 'Step ' + (step + 1) + ' of 6';
+    $('#stepper').innerHTML = META.map((m, i) => {
+      const cls = i < step ? 'done' : i === step ? 'cur' : '';
+      return '<li><button type="button" class="pick' + (i === step ? ' on' : '') + '" data-step="' + i + '"' + (i === step ? ' aria-current="step"' : '') + '><span class="num sm ' + cls + '">' + (i < step ? '✓' : i + 1) + '</span>'
+        + '<span><b style="display:block;font-size:15px">' + m[0] + '</b><span class="small mute">' + (i < step ? 'Done' : i === step ? 'In progress' : 'To do') + '</span></span></button></li>';
+    }).join('');
+    $('#title').textContent = META[step][1];
+    $('#say').textContent = META[step][2];
+    $('#body').innerHTML = BODY[step]();
+    $('#next').textContent = step === 5 ? 'Finished' : 'Looks right, continue →';
+    if (step === 4) {
+      let t = 0;
+      timer = setInterval(() => {
+        t++;
+        document.querySelectorAll('[data-build]').forEach((b) => {
+          const pct = Math.max(0, Math.min(100, (t - b.dataset.build * 8) * 7));
+          b.style.width = pct + '%';
+          if (pct >= 100) b.style.background = 'var(--ok)';
+        });
+      }, 200);
+    }
+  }
+  document.addEventListener('click', (e) => {
+    const s = e.target.closest('[data-step]'), c = e.target.closest('[data-confirm]');
+    if (s) { step = Number(s.dataset.step); render(); }
+    if (c) { confirmed.add(Number(c.dataset.confirm)); render(); }
+    if (e.target.closest('#connect')) { tank = 1; render(); setTimeout(() => { tank = 2; if (step === 1) render(); }, 1800); }
+  });
+  document.addEventListener('input', (e) => { if (e.target.dataset.form) FORM[e.target.dataset.form][1] = e.target.value; });
+  $('#back').addEventListener('click', () => { step = Math.max(0, step - 1); render(); });
+  $('#next').addEventListener('click', () => { step = Math.min(5, step + 1); render(); });
+  render();
+})();
+</script>
+</body>
+</html>

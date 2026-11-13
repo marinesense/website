@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MarineSense — Bridge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<script>try { document.documentElement.dataset.theme = localStorage.getItem('ms-theme') || 'light'; } catch (e) {}</script>
+<style>
+.stat { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; text-decoration: none; color: var(--text); }
+.stat i { flex: none; width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; }
+.stat svg { width: 20px; height: 20px; }
+.stat b { font: 700 24px/1.1 'Space Grotesk', sans-serif; margin-right: 10px; }
+.legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; font-size: 13px; }
+.legend div { display: flex; align-items: center; gap: 8px; }
+.legend i { flex: none; width: 12px; height: 4px; border-radius: 2px; }
+.legend span { flex: 1; }
+.equip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.equip a { flex-direction: row; text-decoration: none; color: var(--text); }
+.equip .read { flex: none; width: 72px; height: 72px; border-radius: 50%; background: var(--bg); border: 1px solid var(--soft); display: grid; place-items: center; font: 500 15px 'JetBrains Mono', monospace; }
+.watch { flex: 1 1 300px; border-width: 2px; }
+.watch.crit { border-color: var(--crit); } .watch.warn { border-color: var(--warn); } .watch.ok { border-color: var(--ok); }
+.watch .r { display: flex; gap: 10px; font-size: 13px; }
+.watch .r span { flex: 1; color: var(--text2); }
+@media (max-width: 720px) { .equip { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body data-page="main" data-chat="open">
+<header id="menu"></header>
+
+<main class="wrap">
+  <section class="row mid">
+    <div style="flex:1 1 280px">
+      <h1 class="h1">Bridge</h1>
+      <div class="mute" style="font-size:15px">Good watch, Chief. MV Northern Aurora · at sea · laden · 13.8 kn</div>
+    </div>
+    <div class="card hl agent" style="flex:2 1 520px;padding:12px 16px">
+      <span class="orb" aria-hidden="true"></span>
+      <div class="say">
+        <div class="eyebrow">MarineSense · 1 item needs you now</div>
+        <p style="min-height:44px"><span id="typed"></span><span class="caret" aria-hidden="true"></span></p>
+      </div>
+      <a class="btn primary big" href="advisory.html">Start step 1</a>
+    </div>
+  </section>
+
+  <section class="row">
+    <div class="card" style="flex:2.1 1 520px">
+      <div class="title"><h2>Ship overview</h2><a class="icon-btn" href="twin.html" aria-label="Open the digital twin">↗</a></div>
+      <div class="row mid" style="gap:16px">
+        <div class="col" style="flex:1 1 220px;gap:10px">
+          <a class="stat" href="advisory.html"><i style="background:var(--crit-soft);color:var(--crit)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3L12 4zM12 10v4M12 17v.5"/></svg></i><span><span class="small mute" style="display:block;font-size:13px">Act now</span><b>1</b><span class="small c-crit" style="font-weight:600">Cylinder 4 exhaust</span></span></a>
+          <a class="stat" href="maintenance.html"><i style="background:var(--warn-soft);color:var(--warn)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></i><span><span class="small mute" style="display:block;font-size:13px">Watch</span><b>2</b><span class="small c-warn" style="font-weight:600">Purifier 2 · Ballast pump 1</span></span></a>
+          <div class="stat"><i style="background:var(--ok-soft);color:var(--ok)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg></i><span><span class="small mute" style="display:block;font-size:13px">Signals in normal range</span><b>2,415</b><span class="small c-ok" style="font-weight:600">of 2,418</span></span></div>
+        </div>
+        <div id="ship" style="flex:1.3 1 300px;min-width:0"></div>
+      </div>
+    </div>
+
+    <div class="card" style="flex:1 1 280px">
+      <div class="title"><h2>Signals by system</h2></div>
+      <div style="position:relative;width:160px;height:160px;align-self:center">
+        <svg viewBox="0 0 140 140" role="img" aria-label="Donut chart of live signals by ship system" style="transform:rotate(-90deg)" fill="none" stroke-width="14">
+          <circle cx="70" cy="70" r="54" style="stroke:var(--text)" stroke-dasharray="66.2 339.3"/>
+          <circle cx="70" cy="70" r="54" style="stroke:var(--wire2)" stroke-dasharray="47.7 339.3" stroke-dashoffset="-68.2"/>
+          <circle cx="70" cy="70" r="54" style="stroke:var(--wire)" stroke-dasharray="56.9 339.3" stroke-dashoffset="-117.9"/>
+          <circle cx="70" cy="70" r="54" style="stroke:var(--accent)" stroke-dasharray="18.8 339.3" stroke-dashoffset="-176.8"/>
+          <circle cx="70" cy="70" r="54" style="stroke:var(--warn)" stroke-dasharray="41.5 339.3" stroke-dashoffset="-197.6"/>
+          <circle cx="70" cy="70" r="54" style="stroke:var(--line)" stroke-dasharray="96.2 339.3" stroke-dashoffset="-241.1"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:grid;place-content:center;text-align:center"><b class="display" style="font-size:24px;line-height:1">2,418</b><span class="small mute">signals</span></div>
+      </div>
+      <div class="legend">
+        <div><i style="background:var(--text)"></i><span>Main engine</span><span class="mono mute" style="flex:none">486</span></div>
+        <div><i style="background:var(--wire2)"></i><span>Generators</span><span class="mono mute" style="flex:none">354</span></div>
+        <div><i style="background:var(--wire)"></i><span>Cargo, ballast</span><span class="mono mute" style="flex:none">420</span></div>
+        <div><i style="background:var(--accent)"></i><span>Boiler, steam</span><span class="mono mute" style="flex:none">148</span></div>
+        <div><i style="background:var(--warn)"></i><span>Steering, nav</span><span class="mono mute" style="flex:none">310</span></div>
+        <div><i style="background:var(--line)"></i><span>Other</span><span class="mono mute" style="flex:none">700</span></div>
+      </div>
+    </div>
+
+    <div class="card strong" style="flex:1 1 260px;align-items:center;gap:6px">
+      <div class="title" style="align-self:stretch"><h2>Main engine load</h2><span class="live" style="color:var(--accent)">LIVE</span></div>
+      <svg viewBox="0 0 220 135" role="img" aria-label="Gauge showing main engine load" style="width:100%;max-width:240px;margin-top:8px" fill="none" stroke-linecap="round">
+        <path d="M30 115 A80 80 0 0 1 190 115" style="stroke:var(--track)" stroke-width="14"/>
+        <path id="gauge" d="M30 115 A80 80 0 0 1 190 115" style="stroke:var(--accent)" stroke-width="14" stroke-dasharray="0 400"/>
+        <line id="needle" x1="110" y1="115" x2="110" y2="53" style="stroke:var(--on-strong)" stroke-width="3"/>
+        <circle cx="110" cy="115" r="6" style="fill:var(--on-strong)"/>
+        <g style="fill:var(--on-strong-mute);font:10px Inter,sans-serif" text-anchor="middle"><text x="22" y="132">0</text><text x="110" y="24">50</text><text x="198" y="132">100</text></g>
+      </svg>
+      <div class="display" style="font-size:38px;font-weight:700;line-height:1"><span id="load">82</span>%</div>
+      <div style="color:var(--on-strong-mute)">Steady at 96 rpm</div>
+      <div style="margin-top:4px;padding:5px 12px;border-radius:14px;background:var(--accent);color:var(--ink);font-size:12px;font-weight:700">I advise 75 % until cylinder 4 cools</div>
+    </div>
+  </section>
+
+  <section class="row">
+    <div class="equip" id="equip" style="flex:1.5 1 520px"></div>
+    <div class="card" style="flex:1 1 400px">
+      <div class="title"><h2>Cylinder 4 exhaust temperature</h2><span class="live c-crit">LIVE</span></div>
+      <svg class="chart" viewBox="0 0 600 250" role="img" aria-label="Line chart of cylinder 4 exhaust temperature over the last ten minutes, now above the 450 degree alarm line">
+        <line class="grid" x1="44" y1="30" x2="596" y2="30"/><line class="limit" x1="44" y1="84" x2="596" y2="84"/><line class="grid" x1="44" y1="138" x2="596" y2="138"/><line class="grid" x1="44" y1="192" x2="596" y2="192"/>
+        <text x="36" y="34" text-anchor="end">480</text><text class="limit-t" x="36" y="88" text-anchor="end">450</text><text x="36" y="142" text-anchor="end">420</text><text x="36" y="196" text-anchor="end">390</text>
+        <text class="limit-t" x="590" y="76" text-anchor="end">Alarm line</text>
+        <text x="44" y="232">10 min ago</text><text x="320" y="232" text-anchor="middle">5 min ago</text><text x="596" y="232" text-anchor="end">now</text>
+        <path class="area" id="area"/><polyline class="line" id="trend"/>
+      </svg>
+    </div>
+  </section>
+
+  <section class="row" id="watch"></section>
+</main>
+
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  const { $, wave, ST } = MS;
+
+  // The agent types its message.
+  const msg = 'Main engine cylinder 4 is 58 °C hotter than the other five. It must come down. Step 1: ask the bridge to reduce engine load to 75 %.';
+  let n = 0;
+  const typing = setInterval(() => { n += 2; $('#typed').textContent = msg.slice(0, n); if (n >= msg.length) clearInterval(typing); }, 25);
+
+  // Turning 3D ship; labels link to the twin.
+  new MS.Scene($('#ship'), { w: 560, h: 300, zoom: 1.25, labels: 'alert', href: 'twin.html' });
+
+  const equip = [
+    ['Main engine', 2, 486, ['Exhaust temps', 'Load', 'Speed'], (s) => wave(s, 462, 3).toFixed(0) + '°C'],
+    ['Generators 1 to 3', 0, 354, ['Load', 'Oil pressure'], (s) => wave(s + 4, 62, 1.5).toFixed(0) + '%'],
+    ['Fuel purifiers', 1, 62, ['Vibration', 'Flow'], (s) => wave(s + 9, 7.1, 0.4).toFixed(1)],
+    ['Ballast pumps', 1, 22, ['Bearing temp'], (s) => wave(s + 13, 78, 1.5).toFixed(0) + '°C'],
+  ];
+  $('#equip').innerHTML = equip.map((q, i) => {
+    const st = ST[q[1]];
+    return '<a class="card" href="twin.html"><span class="col" style="flex:1;gap:6px"><span class="display" style="font-size:17px;font-weight:600">' + q[0] + '</span>'
+      + '<span class="small c-' + st.k + '" style="font-weight:600"><span class="dot' + (q[1] === 2 ? ' sq' : '') + '"></span> ' + st.t + ' · ' + q[2] + ' signals</span>'
+      + '<span style="flex:1;min-height:14px"></span><span style="display:flex;flex-wrap:wrap;gap:6px">' + q[3].map((t) => '<span class="chip">' + t + '</span>').join('') + '</span></span>'
+      + '<span class="read c-' + st.k + '" id="eq' + i + '"></span></a>';
+  }).join('');
+
+  const cards = [
+    { name: 'Exhaust valve, cylinder 4', where: 'Engine room · Main engine', st: 2, off: 0, rough: 1.1, cta: 'Start guided response', href: 'advisory.html',
+      rows: [['Exhaust temp', (s) => wave(s, 462, 3).toFixed(0) + ' °C'], ['Other cylinders', '404 °C'], ['Valve rotation', '0.4 turns/min'], ['Hours since overhaul', '7,940 / 8,000']] },
+    { name: 'Fuel purifier 2', where: 'Engine room · Fuel treatment', st: 1, off: 11, rough: 0.8, cta: 'View details', href: 'twin.html',
+      rows: [['Vibration', (s) => wave(s + 9, 7.1, 0.4).toFixed(1) + ' mm/s'], ['Watch line', '9.0 mm/s'], ['Trend', 'rising 3 days'], ['Bowl clean', 'today']] },
+    { name: 'Generator 1', where: 'Engine room · Power', st: 0, off: 23, rough: 0.5, cta: 'View details', href: 'twin.html',
+      rows: [['Load', (s) => wave(s + 4, 62, 1.5).toFixed(0) + ' %'], ['Oil pressure', (s) => wave(s + 2, 4.6, 0.1).toFixed(1) + ' bar'], ['Cooling water', '78 °C'], ['Hours to filter change', '20']] },
+  ];
+  $('#watch').innerHTML = cards.map((c, i) => {
+    const st = ST[c.st];
+    return '<div class="card watch ' + st.k + '"><div style="display:flex;gap:10px;align-items:flex-start"><div style="flex:1"><h3 style="font-size:16px">' + c.name + '</h3><div class="mute" style="font-size:13px">' + c.where + '</div></div><span class="tag fill-' + st.k + '">' + st.t + '</span></div>'
+      + '<svg class="spark c-' + st.k + '" viewBox="0 0 300 70" preserveAspectRatio="none" aria-hidden="true"><polyline id="sp' + i + '"/></svg>'
+      + c.rows.map((r, j) => '<div class="r"><span>' + r[0] + '</span><b class="mono' + (c.st ? ' c-' + st.k : '') + '" id="w' + i + '_' + j + '" style="font-weight:500"></b></div>').join('')
+      + '<a class="btn' + (c.st === 2 ? ' primary' : '') + '" href="' + c.href + '">' + c.cta + '</a></div>';
+  }).join('');
+
+  let sec = 0;
+  function tick() {
+    sec++;
+    const load = wave(sec, 82, 1), ang = Math.PI * (1 - load / 100);
+    $('#load').textContent = load.toFixed(0);
+    $('#gauge').setAttribute('stroke-dasharray', (load / 100 * 251.3).toFixed(1) + ' 400');
+    $('#needle').setAttribute('x2', (110 + 62 * Math.cos(ang)).toFixed(1));
+    $('#needle').setAttribute('y2', (115 - 62 * Math.sin(ang)).toFixed(1));
+
+    const pts = [];
+    for (let i = 0; i < 60; i++) {
+      const rise = i < 25 ? 405 + 57 * Math.pow(i / 25, 1.6) : 462;
+      pts.push((44 + i * 552 / 59).toFixed(1) + ' ' + (30 + (480 - rise - wave(sec - 59 + i, 0, 1.6)) / 90 * 162).toFixed(1));
+    }
+    $('#trend').setAttribute('points', pts.join(' '));
+    $('#area').setAttribute('d', 'M44 192L' + pts.join('L') + 'L596 192Z');
+
+    equip.forEach((q, i) => { $('#eq' + i).textContent = q[4](sec); });
+    cards.forEach((c, i) => {
+      const sp = [];
+      for (let k = 0; k < 50; k++) {
+        const x = sec - 49 + k + c.off, val = Math.sin(x * c.rough) * 0.6 + Math.sin(x * c.rough * 2.7 + 1) * 0.4;
+        sp.push((k * 300 / 49).toFixed(1) + ',' + (35 - val * 26).toFixed(1));
+      }
+      $('#sp' + i).setAttribute('points', sp.join(' '));
+      c.rows.forEach((r, j) => { $('#w' + i + '_' + j).textContent = typeof r[1] === 'function' ? r[1](sec) : r[1]; });
+    });
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>

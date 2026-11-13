@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MarineSense — Guided response</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<script>try { document.documentElement.dataset.theme = localStorage.getItem('ms-theme') || 'light'; } catch (e) {}</script>
+<style>
+.chart .line { stroke: var(--accent-text); stroke-width: 2.5; }
+.why { display: flex; gap: 10px; }
+.why > span:first-child { flex: none; width: 70px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); padding-top: 2px; }
+</style>
+</head>
+<body data-page="advisory">
+<header id="menu"></header>
+
+<main class="wrap">
+  <section class="row mid">
+    <div style="flex:1 1 380px">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:13px">
+        <span class="tag" id="status"></span>
+        <a href="twin.html" style="color:var(--text2)">Engine room › Main engine › Cylinder 4 › Exhaust valve</a>
+      </div>
+      <h1 class="display" style="margin-top:6px;font-size:28px;font-weight:600;line-height:1.2">Cylinder 4 exhaust temperature is too high</h1>
+    </div>
+    <div style="text-align:right">
+      <div class="mono" style="font-size:34px;font-weight:500;line-height:1" id="temp"></div>
+      <div class="mute" style="font-size:13px">alarm line 450 °C · others average 404 °C</div>
+    </div>
+  </section>
+
+  <div class="row top">
+    <section class="col" style="flex:1.5 1 480px;gap:12px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <h2 class="display" style="flex:1;font-size:18px">Do these 5 steps, in order</h2>
+        <span class="mute" style="font-size:13px" id="count"></span>
+        <button type="button" class="btn" id="reset" style="font-size:13px;font-weight:500">Restart demo</button>
+      </div>
+      <div class="bar" style="height:6px" role="progressbar" aria-label="Steps done" aria-valuemin="0" aria-valuemax="5" id="progress"><i></i></div>
+      <div class="col" style="gap:12px" id="steps"></div>
+    </section>
+
+    <aside class="col" style="flex:1 1 360px">
+      <div class="card">
+        <div class="title"><h2>Cylinder 4 exhaust, last 10 minutes</h2><span class="live c-ok">LIVE</span></div>
+        <svg class="chart" viewBox="0 0 600 220" role="img" aria-label="Line chart of cylinder 4 exhaust temperature against the 450 degree alarm line and the 404 degree average of the other cylinders">
+          <line class="limit" x1="0" y1="74" x2="600" y2="74"/><text class="limit-t" x="6" y="66">Alarm line 450 °C</text>
+          <line class="mean" x1="0" y1="157" x2="600" y2="157"/><text class="mean-t" x="6" y="176">Other cylinders 404 °C</text>
+          <polyline class="line" id="line"/><circle id="tip" cx="596" r="5" style="fill:var(--accent-text)"/>
+        </svg>
+      </div>
+      <div class="card hl">
+        <div style="display:flex;align-items:center;gap:10px"><span class="orb sm" aria-hidden="true"></span><h2 class="display" style="font-size:16px">MarineSense says</h2></div>
+        <div class="col" style="gap:12px" id="says" aria-live="polite"></div>
+      </div>
+      <div class="card" style="gap:10px">
+        <div class="title"><h2>How I reached this advice</h2></div>
+        <div class="why"><span>Signals</span><span>Cylinder 4 exhaust temp, valve rotation, fuel index, scavenge air pressure, jacket water temp, engine load</span></div>
+        <div class="why"><span>Manuals</span><span>Main Engine Manual, Vol 2 §4.3 and Vol 3 §2.1</span></div>
+        <div class="why"><span>History</span><span>Exhaust valve 4 has run 7,940 of 8,000 hours since overhaul</span></div>
+        <div class="small mute">Sample content for this concept. Real steps come from the vessel's own OEM manuals.</div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  const { $ } = MS;
+  const STEPS = [
+    ['Ask the bridge to reduce engine load to 75 %', 'Call the bridge and say: "Engine room requests load reduction to 75 %. Cylinder 4 exhaust temperature high." Ease the load down over about 5 minutes.', 'Less load means less fuel burned, so less heat in the cylinder.', 'Main Engine Manual · Vol 2 · §4.3.1', 'Load is reduced'],
+    ['Compare the fuel index of cylinder 4 with the others', 'On the engine local panel, read the fuel index for all six cylinders. Check that cylinder 4 is within 5 % of the rest.', 'If cylinder 4 gets more fuel than the others, the fault is on the fuel side and not the valve.', 'Main Engine Manual · Vol 2 · §4.3.2', 'Fuel index is the same'],
+    ['Check the exhaust valve on cylinder 4', 'Go to the cylinder top platform. Look at the rotation indicator on the exhaust valve. It should turn steadily. Listen for a hissing or blowing sound.', 'A valve that turns slowly or hisses is not sealing. Hot gas leaks past it and raises the temperature.', 'Main Engine Manual · Vol 2 · §4.3.4', 'Valve is slow and hissing'],
+    ['Keep running at 75 % load', 'Hold 75 % load. Do not open the valve at sea unless I tell you the temperature is rising again.', 'The manual allows running at reduced load with a leaking valve while the temperature stays under the alarm line.', 'Main Engine Manual · Vol 2 · §4.3.6', 'Understood, holding 75 %'],
+    ['Confirm the repair plan', 'I will add "Overhaul exhaust valve, cylinder 4" to the next port stay and reserve the spare valve. Confirm and I will log everything.', 'Fixing it at the next port prevents damage to the valve seat and the turbocharger.', 'Main Engine Manual · Vol 3 · §2.1', 'Confirm and log'],
+  ];
+  const SAYS = [
+    'Cylinder 4 exhaust is 462 °C. The other cylinders average 404 °C. Begin with step 1.',
+    'Load reduction confirmed. Engine load is falling to 75 % and the temperature is coming down. Go to step 2.',
+    'Fuel index on cylinder 4 matches the others, so fuel supply is not the cause. Go to step 3.',
+    'Slow rotation and a blowing sound mean the exhaust valve is leaking. Go to step 4.',
+    'Good. Running at reduced load is safe until the next port. Go to step 5.',
+    'Logged. The valve overhaul is booked for the next port stay and the spare is reserved. I will keep watching cylinder 4 and call you if it goes above 450 °C again.',
+  ];
+  const TARGET = [462, 446, 443, 441, 438, 436];
+  let done = 0, t = 0, hist;
+  const seed = () => Array.from({ length: 60 }, (_, i) => (i < 28 ? 405 + 57 * Math.pow(i / 28, 1.6) : 462) + Math.sin(i * 1.3) * 1.2);
+  const y = (val) => 200 - (val - 380) / 100 * 180;
+
+  function render() {
+    $('#count').textContent = done + ' of 5 done';
+    $('#progress i').style.width = done * 20 + '%';
+    $('#progress').setAttribute('aria-valuenow', done);
+    $('#steps').innerHTML = STEPS.map((s, i) => {
+      const cls = i < done ? 'done' : i === done ? 'cur' : '';
+      return '<div class="card step ' + cls + '"><span class="num ' + cls + '">' + (i < done ? '✓' : i + 1) + '</span><div class="body">'
+        + '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;min-height:40px"><h3 style="flex:1;font-size:17px;font-weight:600">' + s[0] + '</h3><span class="small mute">' + (i < done ? 'Done' : i === done ? 'Do this now' : 'Next') + '</span></div>'
+        + (i === done ? '<p style="font-size:16px;line-height:1.55">' + s[1] + '</p><div class="note"><b class="c-accent">Why: </b>' + s[2] + '<br><a href="manuals.html" style="color:var(--text2)">Source: ' + s[3] + '</a></div>'
+          + '<div style="display:flex;flex-wrap:wrap;gap:10px"><button type="button" class="btn primary big" id="next">' + s[4] + '</button><button type="button" class="btn big" data-open-chat>I need help with this</button></div>' : '')
+        + '</div></div>';
+    }).join('');
+    const says = [];
+    for (let i = done; i >= Math.max(0, done - 2); i--) says.push('<p class="quote' + (i === done ? ' now' : '') + '">' + SAYS[i] + '</p>');
+    $('#says').innerHTML = says.join('');
+  }
+  function tick() {
+    t++;
+    const last = hist[hist.length - 1];
+    hist.push(last + (TARGET[done] - last) * 0.07 + Math.sin(t * 1.3) * 0.5);
+    hist.shift();
+    const cur = hist[hist.length - 1];
+    $('#line').setAttribute('points', hist.map((val, i) => (i * 596 / 59).toFixed(1) + ',' + y(val).toFixed(1)).join(' '));
+    $('#tip').setAttribute('cy', y(cur).toFixed(1));
+    const state = done >= 5 ? ['Under control', 'ok'] : cur < 450 ? ['Recovering', 'warn'] : ['Act now', 'crit'];
+    $('#status').textContent = state[0];
+    $('#status').className = 'tag c-' + state[1];
+    $('#temp').textContent = cur.toFixed(0) + ' °C';
+    $('#temp').className = 'mono c-' + state[1];
+  }
+  document.addEventListener('click', (e) => { if (e.target.closest('#next')) { done++; render(); } });
+  $('#reset').addEventListener('click', () => { done = 0; hist = seed(); render(); tick(); });
+
+  hist = seed();
+  render();
+  tick();
+  setInterval(tick, 500);
+})();
+</script>
+</body>
+</html>
